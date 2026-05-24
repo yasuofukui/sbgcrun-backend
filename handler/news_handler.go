@@ -47,14 +47,6 @@ func (handler *NewsHandler) GetNews() echo.HandlerFunc {
 			Author:    "トレーナー 山田",
 			CreatedAt: "2026-05-20T09:15:00+09:00",
 		},
-		{
-			ID:        "4",
-			Title:     "トリミング予約受付中✂️",
-			Content:   "夏に向けてサマーカットの予約が増えております。週末は混み合いますのでお早めにご予約ください。",
-			Category:  "service",
-			Author:    "トリマー 鈴木",
-			CreatedAt: "2026-05-22T14:00:00+09:00",
-		},
 	}
 
 	return func(c echo.Context) error {
@@ -66,8 +58,8 @@ func (handler *NewsHandler) GetNews() echo.HandlerFunc {
 		)
 		defer span.End()
 
-		// 30%の確率で500エラーを返す
-		if rand.N(10) < 3 {
+		// 80%の確率で500エラーを返す
+		if rand.N(10) < 8 {
 			span.SetAttributes(attribute.Bool("simulated_error", true))
 			return echo.NewHTTPError(http.StatusInternalServerError, "Error")
 		}
