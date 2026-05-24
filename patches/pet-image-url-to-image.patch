@@ -1,0 +1,12 @@
+diff --git a/domain/model/pet.go b/domain/model/pet.go
+--- a/domain/model/pet.go
++++ b/domain/model/pet.go
+@@ -11,7 +11,7 @@ type Pet struct {
+ 	Breed            string     `json:"breed"`
+ 	Gender           string     `json:"gender"`
+ 	Price            float64    `json:"price"`
+-	ImageURL         *string    `json:"image_url"`
++	ImageURL         *string    `json:"image"`
+ 	Likes            int        `json:"likes"`
+ 	Shop             Shop       `json:"shop"`
+ 	BirthDate        *time.Time `json:"birth_date"`
