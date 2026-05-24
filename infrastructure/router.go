@@ -154,6 +154,7 @@ func setupOpenTelemetryMiddleware() echo.MiddlewareFunc {
 func registerRoutes(e *echo.Echo) {
 	healthCheckHandler := handlers.NewHealthCheckHandler()
 	helloWorldHandler := handlers.NewHelloWorldHandler()
+	newsHandler := handlers.NewNewsHandler()
 
 	// ---------------------------
 	// APIルートの定義
@@ -162,6 +163,7 @@ func registerRoutes(e *echo.Echo) {
 	e.GET("/healthcheck", healthCheckHandler.HealthCheck())
 	e.GET("/v1/helloworld", helloWorldHandler.SayHelloWorld())
 	e.GET("/v1/helloworld/error", helloWorldHandler.SayError())
+	e.GET("/v1/news", newsHandler.GetNews())
 	if os.Getenv("DB_CONN") == "1" {
 		sqlHandler := NewSQLHandler()
 		petHandler := handlers.NewPetHandler(sqlHandler)
