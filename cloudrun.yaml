@@ -11,8 +11,6 @@ spec:
         autoscaling.knative.dev/minScale: '1'
         autoscaling.knative.dev/maxScale: '2'
         run.googleapis.com/execution-environment: gen2
-        # TODO: change for your own vpc name
-        # TODO: 配布時はPROJECT_IDをプレースホルダーにする
         run.googleapis.com/network-interfaces: '[{"network":"sbgcrun-app", "subnetwork":"sbgcrun-app"}]'
         run.googleapis.com/vpc-access-egress: all-traffic
         # backend コンテナは cloud-sql-proxy が起動完了してから開始する
@@ -21,7 +19,7 @@ spec:
       containerConcurrency: 10
       timeoutSeconds: 300
       # TODO: 配布時はPROJECT_IDをプレースホルダーにする
-      serviceAccountName: sbgcrun-app-backend@core-port-495407-g3.iam.gserviceaccount.com
+      serviceAccountName: sbgcrun-app-backend@PROJECT_ID.iam.gserviceaccount.com
       containers:
       - name: backend
         image: backend
@@ -65,9 +63,8 @@ spec:
           - "--health-check"
           - "--http-address=0.0.0.0"
           - "--http-port=9090"
-          # TODO: 配布時はPROJECT_IDをプレースホルダーにする
           # フォーマット: <PROJECT_ID>:<REGION>:<INSTANCE_NAME>
-          - "core-port-495407-g3:asia-east1:sbgcrun-app-instance"
+          - "PROJECT_ID:asia-east1:sbgcrun-app-instance"
         resources:
           limits:
             cpu: 500m
