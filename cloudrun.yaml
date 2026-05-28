@@ -14,7 +14,7 @@ spec:
         run.googleapis.com/network-interfaces: '[{"network":"sbgcrun-app", "subnetwork":"sbgcrun-app"}]'
         run.googleapis.com/vpc-access-egress: all-traffic
         # backend コンテナは cloud-sql-proxy が起動完了してから開始する
-        run.googleapis.com/container-dependencies: '{"backend":["cloud-sql-proxy"]}'
+        # run.googleapis.com/container-dependencies: '{"backend":["cloud-sql-proxy"]}'
     spec:
       containerConcurrency: 10
       timeoutSeconds: 300
@@ -25,7 +25,7 @@ spec:
         ports:
         - name: http1
           containerPort: 8081
-        env:
+        # env:
         # - name: DB_USERNAME
         #   value: "sbgcrunuser"
         # - name: DB_PASSWORD
