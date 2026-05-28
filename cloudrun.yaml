@@ -18,7 +18,6 @@ spec:
     spec:
       containerConcurrency: 10
       timeoutSeconds: 300
-      # TODO: 配布時はPROJECT_IDをプレースホルダーにする
       serviceAccountName: sbgcrun-app-backend@PROJECT_ID.iam.gserviceaccount.com
       containers:
       - name: backend
@@ -27,21 +26,21 @@ spec:
         - name: http1
           containerPort: 8081
         env:
-        - name: DB_USERNAME
-          value: "sbgcrunuser"
-        - name: DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: 1
-              name: sbgcrun-app-db-password
-        - name: DB_HOST
-          value: "127.0.0.1"  # Cloud SQL Auth Proxy サイドカー経由で接続
-        - name: DB_PORT
-          value: "5432"
-        - name: DB_NAME
-          value: "app"
-        - name: DB_CONN
-          value: "1"
+        # - name: DB_USERNAME
+        #   value: "sbgcrunuser"
+        # - name: DB_PASSWORD
+        #   valueFrom:
+        #     secretKeyRef:
+        #       key: 1
+        #       name: sbgcrun-app-db-password
+        # - name: DB_HOST
+        #   value: "127.0.0.1"  # Cloud SQL Auth Proxy サイドカー経由で接続
+        # - name: DB_PORT
+        #   value: "5432"
+        # - name: DB_NAME
+        #   value: "app"
+        # - name: DB_CONN
+        #   value: "1"
         resources:
           limits:
             cpu: 1000m
@@ -52,27 +51,27 @@ spec:
           failureThreshold: 30
           tcpSocket:
             port: 8081
-      - name: cloud-sql-proxy
-        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4
-        args:
-          - "--structured-logs"
-          - "--port=5432"
-          - "--private-ip"
-          # health-check 用 HTTP サーバを 0.0.0.0:9090 で起動
-          # Cloud Run の startupProbe から到達可能にするため必要
-          - "--health-check"
-          - "--http-address=0.0.0.0"
-          - "--http-port=9090"
-          # フォーマット: <PROJECT_ID>:<REGION>:<INSTANCE_NAME>
-          - "PROJECT_ID:asia-east1:sbgcrun-app-instance"
-        resources:
-          limits:
-            cpu: 500m
-            memory: 256Mi
-        startupProbe:
-          timeoutSeconds: 5
-          periodSeconds: 5
-          failureThreshold: 20
-          httpGet:
-            path: /startup
-            port: 9090
+      # - name: cloud-sql-proxy
+      #   image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4
+      #   args:
+      #     - "--structured-logs"
+      #     - "--port=5432"
+      #     - "--private-ip"
+      #     # health-check 用 HTTP サーバを 0.0.0.0:9090 で起動
+      #     # Cloud Run の startupProbe から到達可能にするため必要
+      #     - "--health-check"
+      #     - "--http-address=0.0.0.0"
+      #     - "--http-port=9090"
+      #     # フォーマット: <PROJECT_ID>:<REGION>:<INSTANCE_NAME>
+      #     - "PROJECT_ID:asia-east1:sbgcrun-app-instance"
+      #   resources:
+      #     limits:
+      #       cpu: 500m
+      #       memory: 256Mi
+      #   startupProbe:
+      #     timeoutSeconds: 5
+      #     periodSeconds: 5
+      #     failureThreshold: 20
+      #     httpGet:
+      #       path: /startup
+      #       port: 9090
