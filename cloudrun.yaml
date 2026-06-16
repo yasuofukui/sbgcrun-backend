@@ -8,8 +8,8 @@ spec:
   template:
     metadata:
       annotations:
-        autoscaling.knative.dev/minScale: '1'
-        autoscaling.knative.dev/maxScale: '2'
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "2"
         run.googleapis.com/execution-environment: gen2
         run.googleapis.com/network-interfaces: '[{"network":"sbgcrun-app", "subnetwork":"sbgcrun-app"}]'
         run.googleapis.com/vpc-access-egress: all-traffic
@@ -63,7 +63,7 @@ spec:
       #     - "--http-address=0.0.0.0"
       #     - "--http-port=9090"
       #     # フォーマット: <PROJECT_ID>:<REGION>:<INSTANCE_NAME>
-      #     - "PROJECT_ID:asia-east1:sbgcrun-app-instance"
+      #     - "PROJECT_ID:asia-northeast1:sbgcrun-app-instance"
       #   resources:
       #     limits:
       #       cpu: 500m
