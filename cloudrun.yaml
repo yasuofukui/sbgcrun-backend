@@ -9,7 +9,7 @@ spec:
     metadata:
       annotations:
         autoscaling.knative.dev/minScale: "1"
-        autoscaling.knative.dev/maxScale: "2"
+        autoscaling.knative.dev/maxScale: "10"
         run.googleapis.com/execution-environment: gen2
         run.googleapis.com/network-interfaces: '[{"network":"sbgcrun-app", "subnetwork":"sbgcrun-app"}]'
         run.googleapis.com/vpc-access-egress: all-traffic
