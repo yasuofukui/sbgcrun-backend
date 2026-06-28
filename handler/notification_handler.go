@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"net/http"
+	"sync/atomic"
+	"time"
 
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel"
@@ -24,7 +26,8 @@ type NotificationReadRequest struct {
 
 // NotificationHandler ...
 type NotificationHandler struct {
-	Interactor usecase.NotificationInteractor
+	Interactor                usecase.NotificationInteractor
+	getNotificationsCallCount atomic.Uint64
 }
 
 // NewNotificationHandler ...
@@ -48,6 +51,10 @@ func (handler *NotificationHandler) GetNotifications() echo.HandlerFunc {
 			trace.WithSpanKind(trace.SpanKindInternal),
 		)
 		defer span.End()
+
+		if handler.getNotificationsCallCount.Add(1)%3 == 0 {
+			time.Sleep(time.Second)
+		}
 
 		id := c.QueryParam("id")
 
