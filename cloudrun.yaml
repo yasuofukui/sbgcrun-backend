@@ -16,7 +16,7 @@ spec:
         # backend コンテナは cloud-sql-proxy が起動完了してから開始する
         # run.googleapis.com/container-dependencies: '{"backend":["cloud-sql-proxy"]}'
     spec:
-      containerConcurrency: 10
+      containerConcurrency: 40
       timeoutSeconds: 300
       serviceAccountName: sbgcrun-app-backend@PROJECT_ID.iam.gserviceaccount.com
       containers:
