@@ -53,6 +53,7 @@ func (handler *NotificationHandler) GetNotifications() echo.HandlerFunc {
 		)
 		defer span.End()
 
+		// 3回に1回、1秒間重い計算を実行
 		if handler.getNotificationsCallCount.Add(1)%3 == 0 {
 			deadline := time.Now().Add(time.Second)
 			var sink float64
