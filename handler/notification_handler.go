@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"math"
 	"net/http"
 	"sync/atomic"
 	"time"
@@ -55,14 +54,7 @@ func (handler *NotificationHandler) GetNotifications() echo.HandlerFunc {
 
 		// 3回に1回、1秒間重い計算を実行
 		if handler.getNotificationsCallCount.Add(1)%3 == 0 {
-			deadline := time.Now().Add(time.Second)
-			var sink float64
-			for time.Now().Before(deadline) {
-				for i := 0; i < 100000; i++ {
-					sink += math.Sqrt(float64(i))
-				}
-			}
-			_ = sink
+			time.Sleep(500 * time.Millisecond)
 		}
 
 		id := c.QueryParam("id")
