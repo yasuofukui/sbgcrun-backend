@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"math"
 	"net/http"
 	"sync/atomic"
 	"time"
@@ -53,7 +54,14 @@ func (handler *NotificationHandler) GetNotifications() echo.HandlerFunc {
 		defer span.End()
 
 		if handler.getNotificationsCallCount.Add(1)%3 == 0 {
-			time.Sleep(time.Second)
+			deadline := time.Now().Add(time.Second)
+			var sink float64
+			for time.Now().Before(deadline) {
+				for i := 0; i < 100000; i++ {
+					sink += math.Sqrt(float64(i))
+				}
+			}
+			_ = sink
 		}
 
 		id := c.QueryParam("id")
