@@ -1,0 +1,26 @@
+# VCS
+.git
+.gitignore
+
+# ビルド成果物
+bin/
+coverage.out
+coverage.html
+
+# ローカル開発・DB関連
+db/
+local-db/
+patches/
+
+# インフラ・CI定義（イメージビルドには不要）
+cloudbuild_push.yaml
+clouddeploy.yml
+cloudrun.yaml
+skaffold.yaml
+Dockerfile
+.dockerignore
+
+# ドキュメント
+README.md
+LICENSE
+NOTICE

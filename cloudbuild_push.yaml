@@ -1,18 +1,50 @@
 options:
   logging: CLOUD_LOGGING_ONLY
+  machineType: E2_HIGHCPU_8
   env:
     - "DEPLOY_ENV=$_DEPLOY_ENV"
     - "SKAFFOLD_DEFAULT_REPO=$_REGION-docker.pkg.dev/$PROJECT_ID/sbgcrun-app"
 
 steps:
-  - name: "gcr.io/k8s-skaffold/skaffold:v2.10.1"
-    id: "build"
+  # lintとbuildは並列実行し、deployは両方の成功を待つ
+  - name: "golang:1.26"
+    id: lint
+    waitFor: ["-"]
     entrypoint: "bash"
     args:
       - "-c"
       - |-
-        git config --global core.abbrev 8
-        skaffold build --file-output=artifacts.json --filename=skaffold.yaml
+        set -eu
+        UNFORMATTED=$(gofmt -l .)
+        if [ -n "$$UNFORMATTED" ]; then
+          echo "gofmt error in:"
+          echo "$$UNFORMATTED"
+          exit 1
+        fi
+        go vet ./...
+        go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.63.4
+        golangci-lint run
+
+  - name: "gcr.io/cloud-builders/docker"
+    id: build
+    waitFor: ["-"]
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |-
+        set -eu
+        TAG=$(echo $COMMIT_SHA | cut -c1-8)
+        IMAGE=$${SKAFFOLD_DEFAULT_REPO}/backend
+        docker buildx create --driver docker-container --name ci-builder --use
+        docker buildx build \
+          --cache-from=type=registry,ref=$${IMAGE}:buildcache \
+          --cache-to=type=registry,ref=$${IMAGE}:buildcache,mode=max \
+          --tag=$${IMAGE}:$${TAG} \
+          --push \
+          --metadata-file=/workspace/build-metadata.json \
+          .
+        DIGEST=$(sed -n 's/.*"containerimage.digest": *"\([^"]*\)".*/\1/p' /workspace/build-metadata.json)
+        echo "{\"builds\":[{\"imageName\":\"backend\",\"tag\":\"$${IMAGE}:$${TAG}@$${DIGEST}\"}]}" > artifacts.json
 
   #  # Chap6ハンズオンのみ使用。Binary Authorizationの証明書を作成するステップ
   #  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
@@ -41,6 +73,7 @@ steps:
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
     id: deploy
     waitFor:
+      - lint
       - build
     entrypoint: "bash"
     args:

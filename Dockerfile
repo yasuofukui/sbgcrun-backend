@@ -1,24 +1,23 @@
-# === builder: 依存関係生成用 ===
+# === builder: ビルド用 ===
 FROM golang:1.26 AS builder
-ENV GO111MODULE=on \
-    GOPATH=/go \
-    GOBIN=/go/bin \
-    PATH=/go/bin:$PATH
 WORKDIR /app
+
+# 依存関係のみ先にダウンロードし、レイヤーキャッシュを効かせる
 COPY go.mod go.sum ./
 RUN go mod download
-RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.63.4
+
 COPY . /app
 
-# ビルドを実行
-RUN make validate && \
-    make build-linux
+# lint/vetはCloud Buildの別ステップ（cloudbuild_push.yamlのlint）で実行する
+# go-buildキャッシュはローカルのBuildKitビルドで増分コンパイルに効く
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
+    go build -ldflags "-s -w" -o /app/bin/main ./main.go
 
 # === runner: 本番イメージ ===
-### If use TLS connection in container, add ca-certificates following command.
-### > RUN apt-get update && apt-get install -y ca-certificates
-FROM debian:12-slim AS runner
+# 静的バイナリのためdistroless staticで動作する（ca-certificates同梱・非root実行）
+FROM gcr.io/distroless/static-debian12:nonroot AS runner
 
-COPY --from=builder /app/bin/main /
-EXPOSE 80
+COPY --from=builder /app/bin/main /main
+EXPOSE 8081
 ENTRYPOINT ["/main"]
