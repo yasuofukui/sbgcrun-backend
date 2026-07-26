@@ -2,7 +2,7 @@ options:
   logging: CLOUD_LOGGING_ONLY
   env:
     - "DEPLOY_ENV=$_DEPLOY_ENV"
-    - "SKAFFOLD_DEFAULT_REPO=$_REGION-docker.pkg.dev/$PROJECT_ID/sbgcrun-app"
+    - "ARTIFACT_REPO=asia-northeast1-docker.pkg.dev/$PROJECT_ID/sbgcrun-app"
 
 steps:
   # lintとbuildは並列実行し、deployは両方の成功を待つ
@@ -25,54 +25,47 @@ steps:
         golangci-lint run
 
   - name: "gcr.io/cloud-builders/docker"
-    id: build
+    id: "build"
     waitFor: ["-"]
     entrypoint: "bash"
     args:
       - "-c"
       - |-
-        set -eu
-        TAG=$(echo $COMMIT_SHA | cut -c1-8)
-        IMAGE=$${SKAFFOLD_DEFAULT_REPO}/backend
-        docker buildx create --driver docker-container --name ci-builder --use
-        docker buildx build \
-          --cache-from=type=registry,ref=$${IMAGE}:buildcache \
-          --cache-to=type=registry,ref=$${IMAGE}:buildcache,mode=max \
-          --provenance=false　\
-          --platform linux/amd64 \
-          --tag=$${IMAGE}:$${TAG} \
-          --push \
-          --metadata-file=/workspace/build-metadata.json \
-          .
-        DIGEST=$(sed -n 's/.*"containerimage.digest": *"\([^"]*\)".*/\1/p' /workspace/build-metadata.json)
-        echo "{\"builds\":[{\"imageName\":\"backend\",\"tag\":\"$${IMAGE}:$${TAG}@$${DIGEST}\"}]}" > artifacts.json
+        set -euo pipefail
+        TAG=$(git rev-parse --short=8 HEAD)
+        IMAGE="$${ARTIFACT_REPO}/backend"
 
-  #  # Chap6ハンズオンのみ使用。Binary Authorizationの証明書を作成するステップ
-  #  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
-  #    id: create-attestation
-  #    waitFor:
-  #      - build
-  #    entrypoint: "bash"
-  #    args:
-  #      - "-c"
-  #      - |-
-  #        apt-get update && apt-get install -y jq
-  #        cd app/${_SERVICE_NAME}/
-  #        _IMAGE_DIGEST=$(cat artifacts.json | jq -r .builds[0].tag | cut -f 2 -d "@")
-  #        echo "IMAGE_DIGEST: $$_IMAGE_DIGEST"
-  #        gcloud beta container binauthz attestations sign-and-create \
-  #          --project=$PROJECT_ID \
-  #          --artifact-url=$${SKAFFOLD_DEFAULT_REPO}/frontend@$${_IMAGE_DIGEST} \
-  #          --attestor=cnsrun-attestor \
-  #          --attestor-project=$PROJECT_ID \
-  #          --keyversion-project=$PROJECT_ID \
-  #          --keyversion-location=$_REGION \
-  #          --keyversion-keyring=cnsrun-keyring \
-  #          --keyversion-key=cnsrun-attestor-key \
-  #          --keyversion=1
+        # 前回ビルドをキャッシュソースとして pull（初回・タグ未存在時は無視）
+        docker pull "$${IMAGE}:latest" || true
+
+        # 標準の docker build + push でビルド。
+        # buildx を使わないため、タグが直接実イメージの digest を指す（Image Index を介さない）。
+        # キャッシュは --cache-from + BUILDKIT_INLINE_CACHE で実現。
+        DOCKER_BUILDKIT=1 docker build \
+          --build-arg BUILDKIT_INLINE_CACHE=1 \
+          --cache-from "$${IMAGE}:latest" \
+          -t "$${IMAGE}:$${TAG}" \
+          -t "$${IMAGE}:latest" \
+          .
+
+        # push — タグが直接実イメージ digest を指す
+        docker push "$${IMAGE}:$${TAG}"
+        docker push "$${IMAGE}:latest"
+
+        # push 後に digest を取得
+        DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$${IMAGE}:$${TAG}" | cut -d@ -f2)
+        if [ -z "$${DIGEST}" ]; then
+          echo "ERROR: failed to extract image digest" >&2
+          exit 1
+        fi
+
+        # Cloud Deploy 用 artifacts.json を生成
+        printf '{"builds":[{"imageName":"backend","tag":"%s:%s@%s"}]}' \
+          "$${IMAGE}" "$${TAG}" "$${DIGEST}" > artifacts.json
+        cat artifacts.json
 
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
-    id: deploy
+    id: "deploy"
     waitFor:
       - lint
       - build
@@ -80,12 +73,14 @@ steps:
     args:
       - "-c"
       - |-
+        set -euo pipefail
         gcloud deploy releases create $$DEPLOY_ENV-$(git rev-parse --short=8 HEAD)-$(echo $BUILD_ID | cut -c1-8) \
         --project=$PROJECT_ID \
         --region=$_REGION \
         --delivery-pipeline=${_PIPELINE_NAME} \
         --build-artifacts=artifacts.json \
         --skaffold-file=skaffold.yaml
+
 substitutions:
   _PIPELINE_NAME: sbgcrun-backend
   _REGION: asia-northeast1
