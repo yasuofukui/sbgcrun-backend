@@ -38,6 +38,8 @@ steps:
         docker buildx build \
           --cache-from=type=registry,ref=$${IMAGE}:buildcache \
           --cache-to=type=registry,ref=$${IMAGE}:buildcache,mode=max \
+          --provenance=false　\
+          --platform linux/amd64 \
           --tag=$${IMAGE}:$${TAG} \
           --push \
           --metadata-file=/workspace/build-metadata.json \
