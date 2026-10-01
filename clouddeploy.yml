@@ -13,7 +13,8 @@ metadata:
   name: sbgcrun-backend-target
 requireApproval: false
 run:
-  location: projects/PROJECT_ID/locations/REGION
+  # location: projects/PROJECT_ID/locations/REGION
+  location: projects/project-5a711c3e-5949-4e62-ac0/locations/REGION
 executionConfigs:
 - usages:
   - RENDER
