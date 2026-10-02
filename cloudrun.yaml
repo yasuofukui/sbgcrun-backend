@@ -79,3 +79,4 @@ spec:
           httpGet:
             path: /startup
             port: 9090
+            
